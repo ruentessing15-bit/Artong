@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Code Runner - พร้อมใช้ทันที</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --panel-bg: #1e293b;
+            --text-color: #f8fafc;
+            --accent-color: #3b82f6;
+            --accent-hover: #2563eb;
+            --output-bg: #090d16;
+            --border-color: #334155;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background: var(--panel-bg);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            border: 1px solid var(--border-color);
+        }
+        h2 { margin-top: 0; color: #60a5fa; }
+        p { color: #94a3b8; font-size: 14px; }
+        textarea {
+            width: 100%;
+            height: 220px;
+            background-color: var(--output-bg);
+            color: #38bdf8;
+            font-family: 'Fira Code', Consolas, Monaco, monospace;
+            font-size: 14px;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-sizing: border-box;
+            resize: vertical;
+        }
+        textarea:focus { outline: 2px solid var(--accent-color); }
+        button {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 12px;
+            transition: background 0.2s;
+        }
+        button:hover { background-color: var(--accent-hover); }
+        .output-container {
+            margin-top: 20px;
+        }
+        pre {
+            background-color: var(--output-bg);
+            color: #4ade80;
+            padding: 15px;
+            border-radius: 8px;
+            min-height: 80px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: 'Fira Code', Consolas, Monaco, monospace;
+            border: 1px solid var(--border-color);
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .error { color: #f87171 !important; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>⚡ Online JavaScript Runner</h2>
+        <p>พิมพ์โค้ด JavaScript ที่ต้องการรัน แล้วกดปุ่ม "รันโค้ด" ได้เลย (รองรับ `console.log`)</p>
+        
+        <textarea id="codeEditor">// ตัวอย่างทดสอบ
+console.log("ยินดีต้อนรับสู่เว็บรันโค้ดของคุณ!");
+let sum = 10 + 20;
+console.log("ผลลัพธ์ 10 + 20 =", sum);
+
+for(let i = 1; i <= 3; i++) {
+    console.log("นับรอบที่: " + i);
+}</textarea>
+        
+        <button onclick="executeCode()">▶ รันโค้ด</button>
+
+        <div class="output-container">
+            <label><strong>ผลลัพธ์ (Console Output):</strong></label>
+            <pre id="outputArea">ยังไม่มีการรันโค้ด...</pre>
+        </div>
+    </div>
+
+    <script>
+        function executeCode() {
+            const code = document.getElementById('codeEditor').value;
+            const outputArea = document.getElementById('outputArea');
+            
+            // เคลียร์ค่าเก่าและเปลี่ยนสถานะ
+            outputArea.className = "";
+            outputArea.innerText = "";
+
+            // จำลอง (Intercept) console.log เพื่อดึงข้อความมาแสดงในหน้าเว็บแทนที่จะไปโผล่ใน F12 Console
+            let logs = [];
+            const customConsole = {
+                log: function(...args) {
+                    logs.push(args.map(arg => 
+                        typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+                    ).join(' '));
+                },
+                error: function(...args) {
+                    logs.push("[Error] " + args.join(' '));
+                },
+                warn: function(...args) {
+                    logs.push("[Warn] " + args.join(' '));
+                }
+            };
+
+            try {
+                // สร้าง Function เสมือนเพื่อจำกัดขอบเขตและยัด customConsole เข้าไป
+                const runFunction = new Function('console', code);
+                runFunction(customConsole);
+
+                if (logs.length === 0) {
+                    outputArea.innerText = "(โค้ดทำงานสำเร็จ แต่ไม่มีการแสดงผลผ่าน console.log)";
+                } else {
+                    outputArea.innerText = logs.join('\n');
+                }
+            } catch (error) {
+                outputArea.className = "error";
+                outputArea.innerText = `${error.name}: ${error.message}`;
+            }
+        }
+    </script>
+
+</body>
+  </html>
